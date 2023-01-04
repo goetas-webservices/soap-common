@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace GoetasWebservices\SoapServices\Metadata\Generator;
 
-use Doctrine\Common\Inflector\Inflector;
+use Doctrine\Inflector\Inflector;
+use Doctrine\Inflector\InflectorFactory;
 use GoetasWebservices\XML\SOAPReader\Soap\Operation;
 use GoetasWebservices\XML\SOAPReader\Soap\OperationMessage;
 use GoetasWebservices\XML\SOAPReader\Soap\Service;
@@ -46,6 +47,11 @@ class MetadataGenerator implements MetadataGeneratorInterface
      * @var bool
      */
     private $unwrap = false;
+    /**
+     * @var Inflector
+     */
+    private $inflector;
+
 
     /**
      * @param array $namespaces
@@ -54,6 +60,7 @@ class MetadataGenerator implements MetadataGeneratorInterface
     {
         $this->namespaces = $namespaces;
         $this->namingStrategy = $namingStrategy;
+        $this->inflector = InflectorFactory::create()->build();
     }
 
     public function addAlternativeEndpoint(string $service, string $port, string $endPoint): void
@@ -112,7 +119,7 @@ class MetadataGenerator implements MetadataGeneratorInterface
             'style' => $soapOperation->getStyle(),
             'version' => $service->getVersion(),
             'name' => $soapOperation->getOperation()->getName(),
-            'method' => Inflector::camelize($soapOperation->getOperation()->getName()),
+            'method' => $this->inflector->camelize($soapOperation->getOperation()->getName()),
             'input' => $this->generateInOut($soapOperation, $soapOperation->getInput(), $soapOperation->getOperation()->getPortTypeOperation()->getInput(), 'Input', $service),
             'output' => $this->generateInOut($soapOperation, $soapOperation->getOutput(), $soapOperation->getOperation()->getPortTypeOperation()->getOutput(), 'Output', $service),
             'fault' => [],
@@ -130,15 +137,15 @@ class MetadataGenerator implements MetadataGeneratorInterface
         $operation = [
             'message_fqcn' => $ns
                 . $this->baseNs[$service->getVersion()]['messages'] . '\\'
-                . Inflector::classify($operationMessage->getMessage()->getOperation()->getName())
+                . $this->inflector->classify($operationMessage->getMessage()->getOperation()->getName())
                 . $direction,
             'headers_fqcn' => $ns
                 . $this->baseNs[$service->getVersion()]['headers'] . '\\'
-                . Inflector::classify($operationMessage->getMessage()->getOperation()->getName())
+                . $this->inflector->classify($operationMessage->getMessage()->getOperation()->getName())
                 . $direction,
             'part_fqcn' => $ns
                 . $this->baseNs[$service->getVersion()]['parts'] . '\\'
-                . Inflector::classify($operationMessage->getMessage()->getOperation()->getName())
+                . $this->inflector->classify($operationMessage->getMessage()->getOperation()->getName())
                 . $direction,
             'parts' => $this->getParts($param->getMessage()->getParts()),
         ];
